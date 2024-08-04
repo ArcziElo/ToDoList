@@ -14,7 +14,7 @@ data class Task(
 enum class ColorType(val color: Color){
    YELLOW(Color.Yellow),
    CYAN(Color.Cyan),
-   LIGHT_GRAY(Color.LightGray),
+   MAGENTA(Color.Magenta),
    GREEN(Color.Green)
 
 

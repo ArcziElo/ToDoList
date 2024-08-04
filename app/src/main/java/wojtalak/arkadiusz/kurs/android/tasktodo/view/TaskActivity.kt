@@ -6,13 +6,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -31,13 +35,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalContext
 import wojtalak.arkadiusz.kurs.android.tasktodo.model.ColorType
 import wojtalak.arkadiusz.kurs.android.tasktodo.model.Task
 
@@ -61,9 +69,28 @@ class TaskActivity : ComponentActivity() {
         var descriptionText by remember { mutableStateOf("") }
 
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Gray)
+                .padding(20.dp)
+
         ) {
-            Text(text = "Task", fontSize = 30.sp)
+            Text(
+                text = "Task:",
+                fontSize = 30.sp,
+                fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+                    .background(Color.LightGray, CircleShape)
+                    .border(3.dp, shape = CircleShape, color = Color.DarkGray)
+                    .align(Alignment.CenterHorizontally)
+
+                    .wrapContentSize(),
+                textAlign = TextAlign.Center,
+                textDecoration = TextDecoration.Underline,
+                overflow = TextOverflow.Ellipsis,
+            )
             Spacer(modifier = Modifier.height(20.dp))
             Card(
                 colors = CardDefaults.cardColors(containerColor = currentColor.color),
