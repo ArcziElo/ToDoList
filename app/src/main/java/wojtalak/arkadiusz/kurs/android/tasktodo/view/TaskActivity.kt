@@ -2,6 +2,7 @@ package wojtalak.arkadiusz.kurs.android.tasktodo.view
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -173,11 +174,12 @@ class TaskActivity : ComponentActivity() {
                     val intent = Intent(context, HomeActivity::class.java)
                     intent.putExtra("task", task)
                     startActivity(intent)
-
+                    finish()
+                    Toast.makeText(context,"Task created!", Toast.LENGTH_LONG).show()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "dupa")
+                Text(text = "Save")
             }
         }
     }

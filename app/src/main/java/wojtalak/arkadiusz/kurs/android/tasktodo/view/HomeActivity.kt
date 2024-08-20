@@ -2,6 +2,8 @@ package wojtalak.arkadiusz.kurs.android.tasktodo.view
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -38,9 +40,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.startActivity
+import kotlinx.coroutines.runBlocking
+import wojtalak.arkadiusz.kurs.android.tasktodo.api.ServiceConfiguration
+import wojtalak.arkadiusz.kurs.android.tasktodo.api.TaskNetworkRepository
 import wojtalak.arkadiusz.kurs.android.tasktodo.model.Task
+import wojtalak.arkadiusz.kurs.android.tasktodo.util.StorageOperations
 
 var taskList = mutableListOf<Task>()
+val taskNetworkRepository = TaskNetworkRepository(ServiceConfiguration.taskService)
 
 
 class HomeActivity : ComponentActivity() {
@@ -48,116 +55,153 @@ class HomeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        getAllTasksViaNetwork()
+
         val task = intent.getSerializableExtra("task") as? Task
         task?.let {
              taskList.add(it)
+            StorageOperations.writeTaskList(this, taskList)
+
+            addTaskViaNetwork(task)
         }
 
         setContent {
         HomeView()
         }
     }
-}
-@Composable
-fun TaskListView(){
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.LightGray)
-            .padding(horizontal = 10.dp)
-    ) {
-        Text(
-            text = "Task List:",
-            fontSize = 30.sp,
-            fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-                .border(3.dp, shape = CircleShape, color = Color.DarkGray)
-                .background(Color.Gray, CircleShape)
-                .align(Alignment.CenterHorizontally)
-                .wrapContentSize(),
-            textAlign = TextAlign.Center,
+    private fun getAllTasksViaNetwork(){
+        runBlocking {
+            try {
+                taskList = taskNetworkRepository.getAllTasks().toMutableList()
+                StorageOperations.writeTaskList(this@HomeActivity, taskList)
+            }catch (e: Exception)
+            {
+                Log.e("HomeActivity", "Error fetching tasks $e", e)
+                taskList = StorageOperations.readTaskList(this@HomeActivity).toMutableList()
+                Toast.makeText(this@HomeActivity, "Tasks loaded from local storage", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
-        )
-        LazyColumn(
+    private fun addTaskViaNetwork(task: Task?){
+
+        runBlocking {
+            try {
+                taskNetworkRepository.addTask(this@HomeActivity)
+            }catch (e: Exception){
+                Log.e("HomeActivity", "Error adding task $e", e)
+                Toast.makeText(this@HomeActivity, "Network add tasks: $e", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    @Composable
+    fun TaskListView(){
+        Column(
             modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .fillMaxSize()
+                .background(Color.LightGray)
+                .padding(horizontal = 10.dp)
         ) {
-            items(items = taskList){ task ->
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = task.colorType.color),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
-                    modifier = Modifier.padding(20.dp)
-                ) {
-                    Column {
-                        Text(
-                            text = task.title,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            modifier = Modifier
-                                .padding(10.dp)
-                                .fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(20.dp))
-                        Text(
-                            text = task.description,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            modifier = Modifier
-                                .padding(10.dp)
-                                .fillMaxWidth()
-                        )
+            Text(
+                text = "Task List:",
+                fontSize = 30.sp,
+                fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+                    .border(3.dp, shape = CircleShape, color = Color.DarkGray)
+                    .background(Color.Gray, CircleShape)
+                    .align(Alignment.CenterHorizontally)
+                    .wrapContentSize(),
+                textAlign = TextAlign.Center,
+
+                )
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(items = taskList){ task ->
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = task.colorType.color),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                        modifier = Modifier.padding(20.dp)
+                    ) {
+                        Column {
+                            Text(
+                                text = task.title,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                                modifier = Modifier
+                                    .padding(10.dp)
+                                    .fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(20.dp))
+                            Text(
+                                text = task.description,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                                modifier = Modifier
+                                    .padding(10.dp)
+                                    .fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }
         }
     }
-}
 
-@Composable
-fun HomeView(){
-    val context = LocalContext.current
+    @Composable
+    fun HomeView(){
+        val context = LocalContext.current
 
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ){
-    if(taskList.isEmpty()){
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .background(Color.LightGray),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier.fillMaxSize()
         ){
-            Text(
-                text = "Empty task list :( ",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.W300,
-                color = Color.Black,
+            if(taskList.isEmpty()){
+                Column(modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.LightGray),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ){
+                    Text(
+                        text = "Empty task list :( ",
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.W300,
+                        color = Color.Black,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp)
+                            .background(Color.Gray, RoundedCornerShape(10.dp))
+                            .wrapContentSize(),
+
+                        )
+
+                }
+            }else TaskListView()
+
+            FloatingActionButton(
+                onClick = {
+                    val intent = Intent(context, TaskActivity::class.java)
+                    startActivity(context, intent,null)
+
+                    Toast.makeText(context,"Add new task..",Toast.LENGTH_LONG).show()
+                },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
-                    .background(Color.Gray, RoundedCornerShape(10.dp))
-                    .wrapContentSize(),
-
-            )
-
+                    .padding(16.dp)
+                    .align(Alignment.BottomEnd)
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "add icon")
+            }
         }
-    }else TaskListView()
-
-    FloatingActionButton(
-    onClick = {
-        val intent = Intent(context, TaskActivity::class.java)
-        startActivity(context, intent, null)
-    },
-    modifier = Modifier
-        .padding(16.dp)
-        .align(Alignment.BottomEnd)
-) {
-Icon(imageVector = Icons.Default.Add, contentDescription = "add icon")
-}
     }
+
+
 }
+
+
